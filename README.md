@@ -1,2 +1,2 @@
 # blue-wire-backend
-blue-wire's purescript backend
+blue-wire's backend
