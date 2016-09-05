@@ -8,36 +8,42 @@ import Data.Generic
 import Data.Maybe
 import Data.Time.Duration
 import Data.DateTime (DateTime(DateTime))
+import Data.Array
+import Data.Map (Map)
 
 -- | blue-wire config datatype.
-data BlueWireConf = BlueWireConf {
+type BlueWireConf = {
       directory :: String
     , messages :: Set BlueWireMessage
 }
 
 -- | a `blue-wire` message.
-data BlueWireMessage = BlueWireMessage {
+type BlueWireMessage = {
       times :: Set { hour :: Hour, minute :: Minute }
     , reminderText :: String
 }
 
-data BlueWireRequest dur = BlueWireRequest {
+type BlueWireRequest dur = {
       timePassed :: dur
 }
 
 -- | The stored state of blue-wire, containing the kicks
-data BlueWireState queue dur = BlueWireState {
-      kickQueue :: queue (Kick dur)
+newtype BlueWireState dur = BlueWireState {
+      kickQueue :: Array (Kick dur)
+    , blacklistedTimes :: Set (Time)
     , currentKickEnds :: Maybe (DateTime)
+    , lastOnline :: DateTime
+    , regainRate :: Number
+    , minimalTimeBeforeAnyRegain :: dur
 }
+
+derive instance genericMap :: (Generic k, Generic v) => Generic (Map k v)
+derive instance genericSet :: Generic a => Generic (Set a)
+derive instance genericBlueWireState :: Generic dur => Generic (BlueWireState dur)
 
 -- | A kick, containing the kick duration and the time until the next kick.
--- | The timeUntilDuration kick
-data Kick dur = Kick {
-      kickDuration :: dur
-    , timeUntilKick :: dur
-    , borrowedTime :: dur
-
+-- | Additionally,
+type Kick dur = {
+      duration :: dur
+    , timeUntil :: dur
 }
-
-derive instance kickGeneric :: Generic dur => Generic (Kick dur)
