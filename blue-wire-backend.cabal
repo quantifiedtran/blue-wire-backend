@@ -1,0 +1,57 @@
+name:                blue-wire-backend
+version:             0.1.0.0
+synopsis:            Initial project template from stack
+description:         Please see README.md
+homepage:            https://github.com/quantifiedtran/blue-wire-backend#readme
+license:             MIT
+license-file:        LICENSE
+author:              quantifiedtran
+maintainer:          example@example.com
+copyright:           2016 quantifiedtran
+category:            Web
+build-type:          Simple
+-- extra-source-files:
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     BlueWire
+                     , BlueWire.Database
+                     , BlueWire.Database.OrphanInstances
+                     , BlueWire.Database.Schema
+                     , BlueWire.Database.Query
+                     , BlueWire.Logic
+  build-depends:       base >= 4.7 && < 5
+                     , scotty
+                     , persistent
+                     , persistent-template
+                     , persistent-sqlite
+                     , time
+                     , lens
+                     , text
+                     , aeson
+                     , transformers
+                     , resourcet
+  ghc-options:         -Wall -fno-warn-missing-signatures
+  default-language:    Haskell2010
+
+executable blue-wire-backend-exe
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , blue-wire-backend
+  default-language:    Haskell2010
+
+test-suite blue-wire-backend-test
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base
+                     , blue-wire-backend
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/githubuser/blue-wire-backend
