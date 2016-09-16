@@ -32,4 +32,9 @@ getAppWithName name = do
         [] -> return Nothing
         (x:_) -> return $ Just x
 
-createAppProfile name kick = undefined
+{-|
+    Update the time of the last heartbeat for a given app
+-}
+heartbeat now appId = do
+    update appId [AppStatsLastHeartbeat =. now]
+    return now
