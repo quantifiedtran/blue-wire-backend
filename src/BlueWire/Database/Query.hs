@@ -18,6 +18,7 @@ import Control.Lens
 import Data.Time
 import Data.Bifunctor
 import Data.Function
+import Data.Either
 import Data.List
 
 import BlueWire.Database.Schema
@@ -51,7 +52,10 @@ heartbeat timeout now applicationEntity = do
 
             -- The updates to the database entry.
             updates :: [Update AppStats]
-            updates = [LastHeartbeat =. now, ActiveKicks =. kicks]
+            updates = [LastHeartbeat =. now, ActiveKicks =. kicks, KickEnds =. kicktime]
+
+            kicktime :: Maybe UTCTime
+            kicktime = either (Just . fst) (const Nothing) hbpure
 
             -- The kick result from the heartbeat
             kicks :: [Kick]
@@ -97,14 +101,17 @@ heartbeatLogic timeout now appstat =
 
     in case appstat of
         -- There's a kick active
-        AppStats { _kickEnds = Just ends }
+        AppStats { _kickEnds = Just ends, _activeKicks = _kicks }
             -- return the date and time the kick ends without an updated list of kicks
-            -> Left (ends, Nothing)
+            -- unless the time the kick ends has passed, then just return the list of active kicks.
+            | ends > now -> Left (ends, Nothing)
+            | otherwise -> Right _kicks
 
         -- No active kick
         AppStats { _activeKicks = _kicks }
             -- If a time greater than the timeout has passed, add recovered time to the kicks
             | diff >= timeout -> Right (_kicks <&> countdown +~ recoveredTime)
+            -- The heartbeat is within the timeout
             | otherwise ->
                 let
                     -- Subtract the difference in time from all the kick countdowns
