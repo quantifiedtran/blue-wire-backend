@@ -12,10 +12,16 @@
 {-# LANGUAGE RankNTypes                 #-}
 module BlueWire where
 
+-- got a lot of help from looking at this gist:
+-- https://gist.github.com/egonSchiele/5400694#file-main-hs-L50
+
 import qualified Web.Scotty as S
 import Data.Time
-import Control.Lens
+import Control.Lens hiding ((.=))
+import Data.Aeson
+import Data.Aeson.Lens (key)
 import Data.Aeson.TH
+import Data.Text (Text)
 import Control.Monad.IO.Class
 import BlueWire.Database.Query
 import BlueWire.Database.Schema
@@ -24,7 +30,7 @@ import qualified Database.Persist as P
 import qualified Database.Persist.Sql as P
 import qualified Database.Persist.Sqlite as P
 import Control.Monad.Trans.Resource
-
+import Control.Monad.Logger
 
 data PublicConfig = PublicConfig {
       _timeout :: NominalDiffTime
@@ -62,10 +68,18 @@ bluewire (config :: BlueWireConfig) = do
                 liftDb config (heartbeat (config^.publicConf.timeout) now application) >>= S.json
 
     -- Returns the application ID once finished.
-    S.get "/create-app-profile/:application/:initial-kick" $ do
+    S.post "/create-app-profile/:application-json" $ do
+        -- Get the current time
         now <- liftIO getCurrentTime
+        --
+        (_app :: Result AppStats) <- fmap (lastHeartbeat .~ now) . fromJSON <$> S.param "application-json"
+        case _app of
+            Error err -> S.json (object ["error" .= err])
+            Success app -> do
+                -- insert the application into the database
+                _ <- liftDb config $ P.insert app
+                S.json (object ["time" .= now])
 
-        return ()
 
     S.get "/kicks-of/:application" $ do
         return ()
@@ -74,14 +88,13 @@ bluewire (config :: BlueWireConfig) = do
     S.get "/config" $ do
         S.json (config^.publicConf)
 
--- bluewireIO :: Int -> PublicConfig -> IO ()
 bluewireIO port config = S.scotty port $ bluewire config
 
--- bluewireIO' port config = bluewireIO port config defaultDbRun
-
--- defaultDbRun :: MonadIO m => P.SqlPersistT backend a -> m a
--- defaultDbRun action = runResourceT (P.runSqlite ":memory:" action)
-
--- x = P.withSqlConn "dev.sqlite3"
-
 liftDb config = liftIO . (config^.runDb)
+
+migrate :: BlueWireDB ()
+migrate = do
+    P.runMigration migrateAll
+
+bluewireConn :: Text -> BlueWireDB a -> IO a
+bluewireConn conn = runResourceT . runNoLoggingT . P.withSqliteConn conn . P.runSqlConn

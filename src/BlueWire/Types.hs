@@ -7,11 +7,12 @@ import Control.Monad.Trans.Resource
 import Data.Time
 import Data.Aeson
 import Data.Aeson.TH
+import Control.Monad.Logger
 
 {-|
     Type alias for the Persist monad being used.
 -}
-type BlueWireDB = SqlPersistT (ResourceT IO)
+type BlueWireDB = SqlPersistT (NoLoggingT (ResourceT IO))
 
 {-|
     The response from heartbeat request.

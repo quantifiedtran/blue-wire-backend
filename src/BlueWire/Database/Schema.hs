@@ -12,6 +12,7 @@ module BlueWire.Database.Schema where
 import Database.Persist
 import Database.Persist.TH
 import Database.Persist.Sql
+import Data.Aeson.TH
 import Data.Time
 import Control.Monad.Trans.Resource
 
@@ -37,3 +38,6 @@ AppStats
     maxRecovery NominalDiffTime    -- ^ The maximum amount of recovery time for a given kick.
     deriving Show
 |]
+
+deriveJSON defaultOptions ''Kick
+deriveJSON defaultOptions ''AppStats
