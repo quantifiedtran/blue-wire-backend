@@ -36,6 +36,7 @@ AppStats
     recoveryRate NominalDiffTime   -- ^ Rate of recovery, should be >= 0
     recoveryHurdle NominalDiffTime -- ^ The minimum amount of time that should have passed before any recovery time is counted.
     maxRecovery NominalDiffTime    -- ^ The maximum amount of recovery time for a given kick.
+    canNextSetKicks UTCTime  -- ^ The next time the kicks can be set.
     deriving Show
 |]
 

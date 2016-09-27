@@ -10,6 +10,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE ExistentialQuantification  #-}
 {-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE LambdaCase                 #-}
 module BlueWire where
 
 -- got a lot of help from looking at this gist:
@@ -19,9 +20,9 @@ import qualified Web.Scotty as S
 import Data.Time
 import Control.Lens hiding ((.=))
 import Data.Aeson
-import Data.Aeson.Lens (key)
 import Data.Aeson.TH
 import Data.Text (Text)
+import Data.Maybe
 import Control.Monad.IO.Class
 import BlueWire.Database.Query
 import BlueWire.Database.Schema
@@ -53,9 +54,9 @@ makeLenses ''BlueWireConfig
 bluewire (config :: BlueWireConfig) = do
 
     -- Heartbeat the app with the given ID, then return the action that should be taken.
-    S.get "/heartbeat/:application" $ do
+    S.post "/heartbeat/:application" $ do
         -- Query the database for the app
-        maybeApp <- liftDb config . getAppWithName =<< S.param "application"
+        maybeApp <- runDb' . getAppWithName =<< S.param "application"
         -- pattern match on the maybe type for two branches in actions
         case maybeApp of
             -- The app doesn't exist, return `Nothing`
@@ -65,10 +66,10 @@ bluewire (config :: BlueWireConfig) = do
             Just application -> do
                 -- Get the current time in UTC
                 now <- liftIO getCurrentTime
-                liftDb config (heartbeat (config^.publicConf.timeout) now application) >>= S.json
+                runDb' (heartbeat (config^.publicConf.timeout) now application) >>= S.json
 
     -- Returns the application ID once finished.
-    S.post "/create-app-profile/:application-json" $ do
+    S.post "/new/:application-json" $ do
         -- Get the current time
         now <- liftIO getCurrentTime
         --
@@ -77,23 +78,51 @@ bluewire (config :: BlueWireConfig) = do
             Error err -> S.json (object ["error" .= err])
             Success app -> do
                 -- insert the application into the database
-                _ <- liftDb config $ P.insert app
+                _ <- runDb' $ P.insert app
                 S.json (object ["time" .= now])
 
+    S.get "/get/:application/kicks" $
+        S.param "application" >>= fmap (fmap P.entityVal) . runDb' . getAppWithName >>= \case
+            Nothing -> S.json (Nothing :: Maybe ())
+            Just application ->
+                S.json $ object [ "kicks" .= (application^.activeKicks)
+                                , "canNextSetKicks" .= nextKSTime application]
 
-    S.get "/kicks-of/:application" $ do
-        return ()
+    S.post "/set/:application/kicks/:kicks" $ do
+        now <- liftIO getCurrentTime
+        S.param "application" >>= runDb' . getAppWithName >>= \case
+            Nothing -> S.json (Nothing :: Maybe ())
+            Just application
+                | canSetKicks now application ->
+                    fromJSON <$> S.param "kicks" >>= \case
+                        Error err -> S.json $ object ["error" .= err]
+                        Success (kicks :: [Kick]) -> do
+                            let cnsk = addUTCTime (60 * 60 * 24 * 2 {- 2 days -}) now
+                            runDb' $ P.update (P.entityKey application) [ ActiveKicks P.=. kicks
+                                                                        , CanNextSetKicks P.=. cnsk]
+                            S.json $ object ["kicks" .= kicks, "canNextSetKicks" .= cnsk]
+
+                | otherwise -> S.json (object ["canNextSetKicks" .= nextKSTime (P.entityVal application)])
 
     -- get the publicly available config.
-    S.get "/config" $ do
-        S.json (config^.publicConf)
+    S.get "/config" $
+        S.json (config^.publicConf) where
+            runDb' :: MonadIO m => BlueWireDB a -> m a
+            runDb' = liftDb config
+
+            canSetKicks now application = now >= (nextKSTime . P.entityVal $ application)
+
+            nextKSTime = \case
+                AppStats { _kickEnds = Just ends, _canNextSetKicks = cnsk } ->
+                    max ends cnsk
+                application -> application^.canNextSetKicks
 
 bluewireIO port config = S.scotty port $ bluewire config
 
 liftDb config = liftIO . (config^.runDb)
 
 migrate :: BlueWireDB ()
-migrate = do
+migrate =
     P.runMigration migrateAll
 
 bluewireConn :: Text -> BlueWireDB a -> IO a
