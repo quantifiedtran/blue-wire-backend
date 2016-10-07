@@ -87,7 +87,7 @@ bluewire (config :: BlueWireConfig) = do
                 S.json $ object [ "kicks" .= (application^.activeKicks)
                                 , "canNextSetKicks" .= nextKSTime application]
 
-    -- Kick setter, use throttled to once every 2 days, might change to config-defined time period.
+    -- Kick setter, it's use throttled to once every 2 days, might change to config-defined time period.
     S.post "/set/:application/kicks/:kicks" $ do
         now <- liftIO getCurrentTime
         S.param "application" >>= runDb' . getAppWithName >>= \case
