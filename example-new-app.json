@@ -1,0 +1,16 @@
+{
+  "name": "testing-app",
+  "activeKicks": [
+      {
+        "duration": 30,
+        "countdown": 20,
+        "repeatCountdown": 30
+      }
+    ],
+  "lastHeartbeat": "2016-09-29T11:48:44.917Z",
+  "kickEnds": null,
+  "recoveryRate": 0,
+  "recoveryHurdle": 0,
+  "maxRecovery": 0,
+  "canNextSetKicks": "2016-09-29T11:48:44.917Z"
+}

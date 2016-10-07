@@ -40,5 +40,5 @@ AppStats
     deriving Show
 |]
 
-deriveJSON defaultOptions ''Kick
-deriveJSON defaultOptions ''AppStats
+deriveJSON (defaultOptions {fieldLabelModifier = dropWhile (== '_') }) ''Kick
+deriveJSON (defaultOptions {fieldLabelModifier = dropWhile (== '_') }) ''AppStats

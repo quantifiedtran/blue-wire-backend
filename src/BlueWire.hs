@@ -37,6 +37,8 @@ data PublicConfig = PublicConfig {
       _timeout :: NominalDiffTime
     -- ^ The time between requests before an application is assumed to be
     -- closed.
+    , _thisIsABlueWireServer :: Bool
+    -- ^ Boolean to reassure the client that this is the server they're looking for.
 } deriving (Eq, Ord, Show)
 
 makeLenses ''PublicConfig
@@ -69,18 +71,15 @@ bluewire (config :: BlueWireConfig) = do
                 runDb' (heartbeat (config^.publicConf.timeout) now application) >>= S.json
 
     -- Returns the application ID once finished.
-    S.post "/new/:application-json" $ do
+    S.post "/new" $ do
         -- Get the current time
         now <- liftIO getCurrentTime
         --
-        (_app :: Result AppStats) <- fmap (lastHeartbeat .~ now) . fromJSON <$> S.param "application-json"
-        case _app of
-            Error err -> S.json (object ["error" .= err])
-            Success app -> do
-                -- insert the application into the database
-                _ <- runDb' $ P.insert app
-                S.json (object ["time" .= now])
+        (app :: AppStats) <- (lastHeartbeat .~ now) <$> S.jsonData
+        _ <- runDb' $ P.insert app
+        S.json (object ["time" .= now])
 
+    -- Kick getter
     S.get "/get/:application/kicks" $
         S.param "application" >>= fmap (fmap P.entityVal) . runDb' . getAppWithName >>= \case
             Nothing -> S.json (Nothing :: Maybe ())
@@ -88,6 +87,7 @@ bluewire (config :: BlueWireConfig) = do
                 S.json $ object [ "kicks" .= (application^.activeKicks)
                                 , "canNextSetKicks" .= nextKSTime application]
 
+    -- Kick setter, use throttled to once every 2 days, might change to config-defined time period.
     S.post "/set/:application/kicks/:kicks" $ do
         now <- liftIO getCurrentTime
         S.param "application" >>= runDb' . getAppWithName >>= \case
@@ -105,7 +105,7 @@ bluewire (config :: BlueWireConfig) = do
                 | otherwise -> S.json (object ["canNextSetKicks" .= nextKSTime (P.entityVal application)])
 
     -- get the publicly available config.
-    S.get "/config" $
+    S.get "/config" $ do
         S.json (config^.publicConf) where
             runDb' :: MonadIO m => BlueWireDB a -> m a
             runDb' = liftDb config

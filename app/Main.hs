@@ -15,4 +15,4 @@ main :: IO ()
 main = runCommand $ \opts _ -> do
     let runDB = bluewireConn . pack . dbfile $ opts
     runDB migrate
-    bluewireIO (port opts) (BlueWireConfig (PublicConfig 30) runDB)
+    bluewireIO (port opts) (BlueWireConfig (PublicConfig 30 True) runDB)
