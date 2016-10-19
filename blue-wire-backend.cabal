@@ -1,5 +1,5 @@
 name:                blue-wire-backend
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            Initial project template from stack
 description:         Please see README.md
 homepage:            https://github.com/quantifiedtran/blue-wire-backend#readme
@@ -21,9 +21,15 @@ library
                      , BlueWire.Database.Schema
                      , BlueWire.Database.Query
                      , BlueWire.Logic
+                     , BlueWire.Servant
                      , BlueWire.Types
   build-depends:       base >= 4.7 && < 5
                      , scotty
+                     , servant
+                     , servant-js
+                     , servant-server
+                     , either
+                     , syb
                      , persistent
                      , persistent-template
                      , persistent-sqlite
@@ -38,7 +44,7 @@ library
   ghc-options:         -Wall -fno-warn-missing-signatures
   default-language:    Haskell2010
 
-executable blue-wire-backend-exe
+executable blue-wire-server
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
