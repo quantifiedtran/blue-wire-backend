@@ -1,5 +1,13 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
 module BlueWire.Types where
 
 import Database.Persist.Sql
@@ -7,6 +15,7 @@ import Control.Monad.Trans.Resource
 import Data.Time
 import Data.Aeson
 import Data.Aeson.TH
+import Data.Data
 import Control.Monad.Logger
 
 {-|
@@ -25,7 +34,7 @@ type HeartbeatResponse = Either KickResponse InfoResponse
 data KickResponse = KickResponse {
       kickEndsOn :: UTCTime
      -- ^ The time when the kick will end.
-} deriving (Eq, Ord, Show)
+} deriving (Eq, Ord, Show, Data)
 
 {-|
     Information on an upcoming kick.
@@ -36,15 +45,16 @@ data UpcomingKick = UpcomingKick {
     --   told to close.
     , kickWouldLast :: NominalDiffTime
     -- ^ The time that the kick will last.
-} deriving (Eq, Ord, Show)
+} deriving (Eq, Ord, Show, Data)
 
 {-|
     The response when the heartbeat check just registers a passing of time.
 -}
 data InfoResponse = InfoResponse {
-      upcomingKicks :: [UpcomingKick]
+      upcomingKicks :: [UpcomingKick],
       -- ^ A list of the upcoming kicks.
-} deriving (Eq, Ord, Show)
+      canNextSetKicks :: UTCTime
+} deriving (Eq, Ord, Show, Data)
 
 deriveJSON defaultOptions ''KickResponse
 deriveJSON defaultOptions ''UpcomingKick

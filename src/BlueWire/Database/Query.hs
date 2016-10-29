@@ -7,6 +7,7 @@
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE LambdaCase                 #-}
 module BlueWire.Database.Query where
 
 import Database.Persist
@@ -22,7 +23,7 @@ import Data.Either
 import Data.List
 
 import BlueWire.Database.Schema
-import BlueWire.Types
+import BlueWire.Types hiding (canNextSetKicks)
 
 {-|
     Get an app if it exists.
@@ -33,6 +34,13 @@ getAppWithName name = do
     case list of
         [] -> return Nothing
         (x:_) -> return $ Just x
+
+withAppNamed :: String -> BlueWireDB a -> (Entity AppProfile -> BlueWireDB a) -> BlueWireDB a
+withAppNamed appname def action = getAppWithName appname >>= maybe def action
+
+withAction :: Monad m => (k -> m (Maybe b)) -> k -> m c -> (b -> m c) -> m c
+withAction lookukValue key def action =
+    lookukValue key >>= maybe def action
 
 {-|
     Update the time of the last heartbeat for a given app, and if
@@ -67,7 +75,7 @@ heartbeat timeout now applicationEntity = do
 
             -- The response to give from the heartbeat
             hbresponse :: HeartbeatResponse
-            hbresponse = bimap (KickResponse . fst) (InfoResponse . fmap upcoming) hbpure
+            hbresponse = bimap (KickResponse . fst) (\x -> InfoResponse (fmap upcoming x) (application^.canNextSetKicks)) hbpure
 
             -- pull out info from a Kick to am UpcomingKick
             upcoming :: Kick -> UpcomingKick
