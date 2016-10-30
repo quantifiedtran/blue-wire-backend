@@ -1,5 +1,5 @@
 name:                blue-wire-backend
-version:             0.2.0.0
+version:             0.3.0.0
 synopsis:            Initial project template from stack
 description:         Please see README.md
 homepage:            https://github.com/quantifiedtran/blue-wire-backend#readme
@@ -24,11 +24,11 @@ library
                      , BlueWire.Servant
                      , BlueWire.Types
   build-depends:       base >= 4.7 && < 5
-                     , scotty
                      , servant
                      , servant-js
                      , servant-server
                      , either
+                     , warp
                      , syb
                      , persistent
                      , persistent-template

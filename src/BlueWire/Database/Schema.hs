@@ -32,6 +32,14 @@ Kick
     repeatCountdown NominalDiffTime Maybe -- ^ Should this kick repeat when the kick time is over and if so, use this value (null if no repeat).
     deriving Show Data Typeable
 
+-- the new Kick representation
+KickNew
+    knDuration NominalDiffTime
+    knCountdown NominalDiffTime
+    knRepeatCountdown NominalDiffTime Maybe
+    knRecoveryHurdle NominalDiffTime
+    knRecoveryRate NominalDiffTime
+
 AppStats
     name String              -- ^ The name of the application
     UniqueAppStatsName name  -- no two appstats can have the same app name.

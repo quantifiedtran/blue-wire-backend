@@ -27,7 +27,7 @@ type AppAPI =                 Get  '[JSON] AppProfile
 -- | The api for looking at and modifying `Kick`s specifically.
 type KickAPI =                                    Get  '[JSON] [Kick]
           :<|>          ReqBody '[JSON] [Kick] :> Post '[JSON] (Either UTCTime InfoResponse)
-          :<|> "add" :> ReqBody '[JSON] [Kick] :> Post '[JSON] [Kick]
+          :<|> "add" :> ReqBody '[JSON] [Kick] :> Post '[JSON] InfoResponse
 
 {-|
     The API type for blue-wire.
