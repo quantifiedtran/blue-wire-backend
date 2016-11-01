@@ -9,3 +9,4 @@ docs/
 SPEC.md
 .stack-work/
 *.db
+.test.*
