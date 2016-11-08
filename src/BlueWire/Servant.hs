@@ -36,3 +36,5 @@ type BlueWireAPI str config
       =  "new"       :> ReqBody '[JSON] AppProfile :> Post '[JSON] UTCTime
     :<|> "app"       :> Capture "application" str  :> AppAPI
     :<|> "config"                                  :> Get  '[JSON] config
+
+type BlueWireServer str config = "dashboard" :> Raw :<|> BlueWireAPI str config 

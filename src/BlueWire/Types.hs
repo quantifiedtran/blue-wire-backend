@@ -21,7 +21,8 @@ import Control.Monad.Logger
 {-|
     Type alias for the Persist monad being used.
 -}
-type BlueWireDB = SqlPersistT (NoLoggingT (ResourceT IO))
+type BlueWireDB = BlueWireDBT IO
+type BlueWireDBT m = SqlPersistT (ResourceT (NoLoggingT m))
 
 {-|
     The response from heartbeat request.

@@ -28,6 +28,7 @@ import Data.Text (Text)
 import Data.Maybe
 import Servant.Server
 import Servant.API
+import Network.Wai (Application)
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified Network.Wai.Handler.Warp as Warp
@@ -56,31 +57,36 @@ deriveJSON (defaultOptions {fieldLabelModifier = dropWhile (== '_') }) ''PublicC
 data BlueWireConfig = BlueWireConfig {
       _publicConf :: PublicConfig
     -- ^ The publicly available configuration
-    , _runDb :: forall a. BlueWireDB a -> IO a
+    , _runDb :: forall m a. MonadIO m => BlueWireDB a -> m a
     -- ^ The function to run database actions with.
 }
 
 makeLenses ''BlueWireConfig
 
-bluewireAPI :: Proxy (BlueWireAPI String PublicConfig)
-bluewireAPI = Proxy
+bluewireAPIServe :: Proxy (BlueWireServer String PublicConfig)
+bluewireAPIServe = Proxy
 
 bluewireIO :: Int -> BlueWireConfig -> IO ()
-bluewireIO port config = Warp.run port $ serve bluewireAPI (bluewireServant config)
+bluewireIO port config = Warp.run port $ serve bluewireAPIServe (bluewireServant config)
 
-liftDb config = liftIO . (config^.runDb)
+liftDb config = config^.runDb
 
 migrate :: BlueWireDB ()
 migrate =
     P.runMigration migrateAll
 
-bluewireConn :: Text -> BlueWireDB a -> IO a
-bluewireConn conn = runResourceT . runNoLoggingT . P.withSqliteConn conn . P.runSqlConn
+bluewireConnWithPool :: P.ConnectionPool -> BlueWireDB a -> NoLoggingT IO a
+bluewireConnWithPool pool = runResourceT . flip P.runSqlPool pool
 
-bluewireServant :: BlueWireConfig -> Server (BlueWireAPI String PublicConfig)
-bluewireServant (config :: BlueWireConfig) = newProfile
-                                        :<|> appAPI
-                                        :<|> conf where
+bluewireServant :: BlueWireConfig -> Server (BlueWireServer String PublicConfig)
+bluewireServant config =  dashboard
+                     :<|> newProfile
+                     :<|> appAPI
+                     :<|> conf
+                     where
+
+    dashboard :: Application
+    dashboard = undefined
 
     conf :: ExceptT ServantErr IO PublicConfig
     conf = return (config^.publicConf)
@@ -98,7 +104,7 @@ bluewireServant (config :: BlueWireConfig) = newProfile
                 return (Just now)
             Just _ -> return Nothing
         case result of
-            Nothing -> throwE (err409 { errBody = "Profile already exists" })
+            Nothing -> throwE (err409 { errBody = "\"Profile already exists\"" })
             Just _ -> return now
 
     appAPI :: String -> Server AppAPI
@@ -109,7 +115,7 @@ bluewireServant (config :: BlueWireConfig) = newProfile
         queryAppname :: ExceptT ServantErr IO (P.Entity AppProfile)
         queryAppname = do
             maybeAppEn <- runDB' (getAppWithName appname)
-            maybe (throwE err400 {errBody = "App doesn't exist"}) return maybeAppEn
+            maybe (throwE err400 {errBody = "\"App doesn't exist\""}) return maybeAppEn
 
         getApp :: ExceptT ServantErr IO AppProfile
         getApp = P.entityVal <$> queryAppname
@@ -130,7 +136,7 @@ bluewireServant (config :: BlueWireConfig) = newProfile
                 now <- liftIO getCurrentTime
                 if canSetKicks now en then
                     maybe (throwE err400) (return . Right . genInfoResponse) <=< runDB' $ do
-                        P.update (P.entityKey en) [ActiveKicks P.=. kicks, CanNextSetKicks P.=. now]
+                        P.update (P.entityKey en) [ActiveKicks P.=. kicks, CanNextSetKicks P.=. ((24 * 60 * 60) `addUTCTime` now)]
                         P.get (P.entityKey en)
                     else return . Left $ P.entityVal en^.canNextSetKicks
 

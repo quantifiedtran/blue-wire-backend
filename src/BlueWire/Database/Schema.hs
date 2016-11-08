@@ -26,19 +26,19 @@ import BlueWire.Database.OrphanInstances()
 
 share [mkPersist sqlSettings { mpsGenerateLenses = True, mpsPrefixFields = False }
       , mkMigrate "migrateAll"] [persistLowerCase|
+
+Recovery
+    rate NominalDiffTime
+    hurdle NominalDiffTime
+    maxTime NominalDiffTime
+    deriving Show Data Typeable
+
 Kick
     duration NominalDiffTime       -- ^ The duration of the kick, in seconds.
     countdown NominalDiffTime      -- ^ The total time before, an actual mutable value.
     repeatCountdown NominalDiffTime Maybe -- ^ Should this kick repeat when the kick time is over and if so, use this value (null if no repeat).
+    recoveryProfile Recovery Maybe
     deriving Show Data Typeable
-
--- the new Kick representation
-KickNew
-    knDuration NominalDiffTime
-    knCountdown NominalDiffTime
-    knRepeatCountdown NominalDiffTime Maybe
-    knRecoveryHurdle NominalDiffTime
-    knRecoveryRate NominalDiffTime
 
 AppStats
     name String              -- ^ The name of the application
@@ -46,13 +46,11 @@ AppStats
     activeKicks [Kick]
     lastHeartbeat UTCTime    -- ^ The last time a heartbeat was recieved
     kickEnds UTCTime Maybe   -- ^ The time when the active kick will end, Nothing if there's no active kick.
-    recoveryRate NominalDiffTime   -- ^ Rate of recovery, should be >= 0
-    recoveryHurdle NominalDiffTime -- ^ The minimum amount of time that should have passed before any recovery time is counted.
-    maxRecovery NominalDiffTime    -- ^ The maximum amount of recovery time for a given kick.
     canNextSetKicks UTCTime  -- ^ The next time the kicks can be set.
     deriving Show Data Typeable
 |]
 
+deriveJSON (defaultOptions {fieldLabelModifier = dropWhile (== '_') }) ''Recovery
 deriveJSON (defaultOptions {fieldLabelModifier = dropWhile (== '_') }) ''Kick
 deriveJSON (defaultOptions {fieldLabelModifier = dropWhile (== '_') }) ''AppStats
 
