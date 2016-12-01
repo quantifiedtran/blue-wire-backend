@@ -122,7 +122,7 @@ heartbeatLogic timeout now appstat =
             -- return the date and time the kick ends without an updated list of kicks
             -- unless the time the kick ends has passed, then just return the list of active kicks.
             | ends >= now -> Left (ends, Nothing)
-            | otherwise -> Right _kicks
+            | otherwise -> Right (recoverOnKick (diff - timeout) <$> _kicks)
 
         -- No active kick
         AppStats { _activeKicks = _kicks }
