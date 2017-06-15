@@ -20,6 +20,7 @@ library
                      , BlueWire.Database.OrphanInstances
                      , BlueWire.Database.Schema
                      , BlueWire.Database.Query
+                     , BlueWire.Database.Opaleye.Schema
                      , BlueWire.Logic
                      , BlueWire.APIGen
                      , BlueWire.Servant
@@ -36,11 +37,12 @@ library
                      , persistent
                      , persistent-template
                      , persistent-sqlite
+                     , opaleye
+                     , product-profunctors
                      , time
                      , lens
                      , text
                      , aeson
-                     , aeson-lens
                      , transformers
                      , resourcet
                      , monad-logger
