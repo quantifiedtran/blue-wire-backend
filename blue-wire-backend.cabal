@@ -17,9 +17,6 @@ library
   hs-source-dirs:      src
   exposed-modules:     BlueWire
                      , BlueWire.Database
-                     , BlueWire.Database.OrphanInstances
-                     , BlueWire.Database.Schema
-                     , BlueWire.Database.Query
                      , BlueWire.Database.Opaleye.Schema
                      , BlueWire.Logic
                      , BlueWire.APIGen
@@ -34,16 +31,13 @@ library
                      , warp
                      , wai
                      , syb
-                     , persistent
-                     , persistent-template
-                     , persistent-sqlite
                      , opaleye
                      , product-profunctors
                      , time
-                     , lens
                      , text
                      , aeson
                      , transformers
+                     , mtl
                      , resourcet
                      , monad-logger
   ghc-options:         -Wall -fno-warn-missing-signatures

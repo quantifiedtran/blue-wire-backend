@@ -14,13 +14,12 @@ module BlueWire.Servant where
 
 import Servant.API
 import BlueWire.Types
-import BlueWire.Database.Schema
-import BlueWire.Database.Query
+import BlueWire.Database.Opaleye.Schema
 import Data.Time
 import Data.Proxy
 
--- | The api for looking at and modifying `AppProfile`s in the database.
-type AppAPI =                 Get  '[JSON] AppProfile
+-- | The api for looking at and modifying `Profile'`s in the database.
+type AppAPI =                 Get  '[JSON] Profile'
           :<|> "heartbeat" :> Post '[JSON] HeartbeatResponse
           :<|> "kicks"     :> KickAPI
 
@@ -33,8 +32,8 @@ type KickAPI =                                    Get  '[JSON] [Kick]
     The API type for blue-wire.
 -}
 type BlueWireAPI str config
-      =  "new"       :> ReqBody '[JSON] AppProfile :> Post '[JSON] UTCTime
+      =  "new"       :> ReqBody '[JSON] Profile' :> Post '[JSON] UTCTime
     :<|> "app"       :> Capture "application" str  :> AppAPI
     :<|> "config"                                  :> Get  '[JSON] config
 
-type BlueWireServer str config = "dashboard" :> Raw :<|> BlueWireAPI str config 
+type BlueWireServer str config = "dashboard" :> Raw :<|> BlueWireAPI str config

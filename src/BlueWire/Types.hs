@@ -10,7 +10,6 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 module BlueWire.Types where
 
-import Database.Persist.Sql
 import Control.Monad.Trans.Resource
 import Data.Time
 import Data.Aeson
@@ -21,8 +20,7 @@ import Control.Monad.Logger
 {-|
     Type alias for the Persist monad being used.
 -}
-type BlueWireDB = BlueWireDBT IO
-type BlueWireDBT m = SqlPersistT (ResourceT (NoLoggingT m))
+type BlueWireDB a = IO a
 
 {-|
     The response from heartbeat request.
