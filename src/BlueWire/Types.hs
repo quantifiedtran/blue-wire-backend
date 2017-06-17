@@ -10,12 +10,10 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 module BlueWire.Types where
 
-import Control.Monad.Trans.Resource
 import Data.Time
 import Data.Aeson
 import Data.Aeson.TH
 import Data.Data
-import Control.Monad.Logger
 
 {-|
     Type alias for the Persist monad being used.
@@ -25,7 +23,7 @@ type BlueWireDB a = IO a
 {-|
     The response from heartbeat request.
 -}
-type HeartbeatResponse = Either KickResponse InfoResponse
+type KeepaliveResponse = Either KickResponse InfoResponse
 
 {-|
     The response when the heartbeat check results in telling the application that it should close

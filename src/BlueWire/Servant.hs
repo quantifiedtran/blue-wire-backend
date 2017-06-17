@@ -20,13 +20,13 @@ import Data.Proxy
 
 -- | The api for looking at and modifying `Profile'`s in the database.
 type AppAPI =                 Get  '[JSON] Profile'
-          :<|> "heartbeat" :> Post '[JSON] HeartbeatResponse
+          :<|> "keepalive" :> Post '[JSON] KeepaliveResponse
           :<|> "kicks"     :> KickAPI
 
--- | The api for looking at and modifying `Kick`s specifically.
-type KickAPI =                                    Get  '[JSON] [Kick]
-          :<|>          ReqBody '[JSON] [Kick] :> Post '[JSON] (Either UTCTime InfoResponse)
-          :<|> "add" :> ReqBody '[JSON] [Kick] :> Post '[JSON] InfoResponse
+-- | The api for looking at and modifying `Kick'`s specifically.
+type KickAPI =                                     Get  '[JSON] [Kick']
+          :<|>          ReqBody '[JSON] [Kick'] :> Post '[JSON] (Either UTCTime InfoResponse)
+          :<|> "add" :> ReqBody '[JSON] [Kick'] :> Post '[JSON] InfoResponse
 
 {-|
     The API type for blue-wire.
