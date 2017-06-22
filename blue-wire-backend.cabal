@@ -33,6 +33,7 @@ library
                      , syb
                      , opaleye
                      , product-profunctors
+                     , profunctors
                      , time
                      , text
                      , aeson

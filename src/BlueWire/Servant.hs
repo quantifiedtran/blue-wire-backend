@@ -32,7 +32,7 @@ type KickAPI =                                     Get  '[JSON] [Kick']
     The API type for blue-wire.
 -}
 type BlueWireAPI str config
-      =  "new"       :> ReqBody '[JSON] Profile' :> Post '[JSON] UTCTime
+      =  "new"       :> ReqBody '[JSON] Profile'   :> Post '[JSON] UTCTime
     :<|> "app"       :> Capture "application" str  :> AppAPI
     :<|> "config"                                  :> Get  '[JSON] config
 
