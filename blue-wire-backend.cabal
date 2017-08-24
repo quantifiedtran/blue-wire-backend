@@ -58,6 +58,17 @@ executable blue-wire-server
                      , transformers
   default-language:    Haskell2010
 
+executable bwviewer
+  hs-source-dirs:      bwviewer
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , blue-wire-backend
+                     , brick
+                     , transformers
+                     , servant-client
+  default-language:    Haskell2010
+
 test-suite blue-wire-backend-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test

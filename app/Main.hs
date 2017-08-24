@@ -13,7 +13,7 @@ instance Options BWOpts where
                            <*> simpleOption "pooln" 10 "The size of the connection pool"
 
 main :: IO ()
-main = purStrLn "Rewriting DB at the moment"
+main = putStrLn "Rewriting DB at the moment"
     {-
     runCommand $ \opts _ ->
         runNoLoggingT . P.withSqlitePool (pack $ dbfile opts) (poolSize opts) $ \pool -> do

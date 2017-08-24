@@ -15,7 +15,7 @@ import Opaleye hiding (min)
 keepalive :: MonadState Profile' m => UTCTime -> m KeepaliveResponse
 keepalive timeNow = undefined
 
--- keepaliveOpal :: Table ProfileCol ProfileCol 
+-- keepaliveOpal :: Table ProfileCol ProfileCol
 
 -- | Calculate the recovery time for a countdown based on a `Recovery` profile.
 recover :: Recovery'       -- ^ The recovery profile
