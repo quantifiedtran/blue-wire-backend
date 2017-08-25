@@ -1,13 +1,16 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 module Main where
 
 import qualified Brick as B
 import qualified Servant.Client as S
 import BlueWire.Types
 import BlueWire.Servant
-import BlueWire.Database.Opaleye (Profile')
+import BlueWire.Database.Opaleye.Schema (Profile')
 import qualified Data.Aeson as JSON
+import qualified Graphics.Vty.Attributes as B (defAttr)
 
 main :: IO ()
 main = putStrLn "nope"
@@ -22,6 +25,8 @@ data Nav
     | LocalConfig
     deriving (Eq, Ord, Show)
 
+type BWEvent = ()
+
 -- | the configuration of the program
 data ViewConfig = ViewConfig {
     knownServers :: [String],
@@ -34,10 +39,11 @@ defaultVC = ViewConfig [] False Nothing
 data BWVState = BVWS {
     currentServerView :: Maybe (String, Maybe Profile'),
     configFilename :: String,
-    currentNav :: Nav
+    currentNav :: Nav,
+    viewConfig :: ViewConfig
 } deriving (Eq, Ord, Show)
 
-renderState :: BWVState -> [Wiget ViewName]
+renderState :: BWVState -> [B.Widget ViewName]
 renderState BVWS{..} = [wig]
     where
         wig = case currentNav of
@@ -49,7 +55,17 @@ renderState BVWS{..} = [wig]
                     in undefined
                 Server -> undefined
                 LocalConfig -> undefined
+
+handleEvents :: BWVState
+             -> B.BrickEvent ViewName BWEvent
+             -> B.EventM ViewName (B.Next BWVState)
+handleEvents state = \case
+    _ -> undefined
+
 bwapp = B.App
     { appDraw = renderState
-    , appChooseCursor = \_ _ -> Nothing
+    , appChooseCursor = B.neverShowCursor
+    , appStartEvent = return
+    , appAttrMap = const $ B.attrMap B.defAttr []
+    , appHandleEvent = handleEvents
     }
