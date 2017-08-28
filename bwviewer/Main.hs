@@ -1,10 +1,12 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE LambdaCase #-}
 module Main where
 
 import qualified Brick as B
+import qualified Brick.Widgets.List as B
 import qualified Servant.Client as S
 import BlueWire.Types
 import BlueWire.Servant
@@ -16,10 +18,7 @@ main :: IO ()
 main = putStrLn "nope"
 
 -- | The views in the TUI
-type ViewName
-    = ()
-
-data Nav
+data ViewName
     = Menu
     | Server
     | LocalConfig
@@ -29,38 +28,49 @@ type BWEvent = ()
 
 -- | the configuration of the program
 data ViewConfig = ViewConfig {
-    knownServers :: [String],
     shouldAutoloadServer :: Bool,
     autoloadServer :: Maybe (String, Maybe String)
 } deriving (Eq, Ord, Show)
 
 defaultVC = ViewConfig [] False Nothing
 
-data BWVState = BVWS {
-    currentServerView :: Maybe (String, Maybe Profile'),
-    configFilename :: String,
-    currentNav :: Nav,
-    viewConfig :: ViewConfig
-} deriving (Eq, Ord, Show)
+data BWVSum
+    = ServerView
+        { currentServer :: Maybe (String, Maybe Profile')
+        , knownServers :: [(String, [String])]
+        }
+    | ConfigView { bwvConfig :: ViewConfig }
+    | MenuView
+    deriving (Eq, Ord, Show)
+
+data BWVState = BWVState
+    { view :: BWVSum
+    , confFile :: String
+    }
 
 renderState :: BWVState -> [B.Widget ViewName]
-renderState BVWS{..} = [wig]
+renderState BWVState {..} = [wig]
     where
-        wig = case currentNav of
+        wig = case view of
                 Menu ->
                     let title = "Menu"
-                        list = [ ("Connect to server", Server)
-                               , ("View & edit config", LocalConfig)
-                               ]
+                        list = []
                     in undefined
                 Server -> undefined
                 LocalConfig -> undefined
 
+menuList =
+    let list = []
+    in B.list
+
 handleEvents :: BWVState
              -> B.BrickEvent ViewName BWEvent
              -> B.EventM ViewName (B.Next BWVState)
-handleEvents state = \case
-    _ -> undefined
+handleEvents BWVS{..} ev =
+    case currentNav of
+        MenuView -> case ev of
+            B.VtyEvent vtyev -> B.handleListEvent vtyev
+            _ -> undefined
 
 bwapp = B.App
     { appDraw = renderState
