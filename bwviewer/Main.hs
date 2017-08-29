@@ -7,15 +7,16 @@ module Main where
 
 import qualified Brick as B
 import qualified Brick.Widgets.List as B
+import qualified Brick.Widgets.Core as B
 import qualified Servant.Client as S
 import BlueWire.Types
 import BlueWire.Servant
 import BlueWire.Database.Opaleye.Schema (Profile')
 import qualified Data.Aeson as JSON
-import qualified Graphics.Vty.Attributes as B (defAttr)
+import qualified Graphics.Vty.Attributes as B (defAttr, reverseVideo, withStyle)
 
 main :: IO ()
-main = putStrLn "nope"
+main = B.defaultMain bwapp (BWVState (MenuView $ menuList Menu) "~/.bwvconf") >> return ()
 
 -- | The views in the TUI
 data ViewName
@@ -32,7 +33,7 @@ data ViewConfig = ViewConfig {
     autoloadServer :: Maybe (String, Maybe String)
 } deriving (Eq, Ord, Show)
 
-defaultVC = ViewConfig [] False Nothing
+defaultVC = ViewConfig False Nothing
 
 data BWVSum
     = ServerView
@@ -40,42 +41,53 @@ data BWVSum
         , knownServers :: [(String, [String])]
         }
     | ConfigView { bwvConfig :: ViewConfig }
-    | MenuView
-    deriving (Eq, Ord, Show)
+    | MenuView { brickList :: B.List ViewName ViewName }
+    deriving (Show)
 
 data BWVState = BWVState
     { view :: BWVSum
     , confFile :: String
-    }
+    } deriving (Show)
 
 renderState :: BWVState -> [B.Widget ViewName]
-renderState BWVState {..} = [wig]
+renderState BWVState{..} = [wig]
     where
         wig = case view of
-                Menu ->
-                    let title = "Menu"
-                        list = []
-                    in undefined
-                Server -> undefined
-                LocalConfig -> undefined
+                MenuView{..} ->
+                    let itemRender slct = selected slct . \case
+                            Menu -> B.str "menu"
+                            Server -> B.str "select server"
+                            LocalConfig -> B.str "config"
+                    in B.renderList itemRender True brickList
+                ServerView{..} -> undefined
+                ConfigView{..} -> undefined
 
-menuList =
-    let list = []
-    in B.list
+        selected :: Bool -> B.Widget n -> B.Widget n
+        selected True w = B.withAttr "inverted" w
+        selected _ w = w
+
+
+menuList :: Ord n => n -> B.List n ViewName
+menuList n =
+    let list = [Server, LocalConfig]
+    in B.list n list 1
 
 handleEvents :: BWVState
              -> B.BrickEvent ViewName BWEvent
              -> B.EventM ViewName (B.Next BWVState)
-handleEvents BWVS{..} ev =
-    case currentNav of
-        MenuView -> case ev of
-            B.VtyEvent vtyev -> B.handleListEvent vtyev
-            _ -> undefined
+handleEvents st@BWVState{..} ev =
+    case view of
+      menu@MenuView{..} -> case ev of
+            B.VtyEvent vtyev -> do
+                brickList_ <- B.handleListEvent vtyev brickList
+                B.continue $ st{ view = menu{ brickList = brickList_ } }
+            _ -> B.continue st
 
 bwapp = B.App
     { appDraw = renderState
     , appChooseCursor = B.neverShowCursor
     , appStartEvent = return
-    , appAttrMap = const $ B.attrMap B.defAttr []
+    , appAttrMap
+      = const $ B.attrMap B.defAttr [("inverted", B.defAttr `B.withStyle` B.reverseVideo)]
     , appHandleEvent = handleEvents
     }
